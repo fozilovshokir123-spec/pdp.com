@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pdp.com - Raqamli Maktab Tizimi</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Ikonkalari -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    boxShadow: {
+                        'nm-flat': '9px 9px 16px #bcbcbc, -9px -9px 16px #ffffff',
+                        'nm-concave': 'inset 9px 9px 16px #bcbcbc, inset -9px -9px 16px #ffffff',
+                        'nm-btn': '5px 5px 10px #b8b8b8, -5px -5px 10px #ffffff',
+                        'nm-btn-active': 'inset 3px 3px 6px #b8b8b8, inset -3px -3px 6px #ffffff',
+                        '3d': '0 15px 30px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.6)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #e0e0e0; font-family: 'Segoe UI', sans-serif; }
+        .premium-blur { backdrop-filter: blur(10px); background: rgba(224, 224, 224, 0.85); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #e0e0e0; }
+        ::-webkit-scrollbar-thumb { background: #bcbcbc; border-radius: 10px; }
+    </style>
+</head>
+<body class="min-h-screen text-gray-800 antialiased p-3 md:p-6">
+
+    <!-- 1. AVTORIZATSIYA (LOGIN OYNASI) -->
+    <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="w-full max-w-md p-8 rounded-3xl shadow-nm-flat bg-[#e0e0e0] border border-white/60 text-center">
+            <div class="w-20 h-20 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-3xl shadow-lg transform -rotate-6">
+                <i class="fa-solid fa-graduation-cap"></i>
+            </div>
+            <h2 class="text-3xl font-black text-indigo-950 tracking-wide mb-2">pdp.com</h2>
+            <p class="text-xs text-gray-500 uppercase tracking-widest font-bold mb-8">Tizimga kirish</p>
+            
+            <div class="space-y-5 text-left">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2 px-1">Login</label>
+                    <div class="p-4 rounded-2xl shadow-nm-concave flex items-center">
+                        <i class="fa-solid fa-user text-gray-400 mr-3"></i>
+                        <input type="text" id="login-input" placeholder="ustoz, oyla yoki direktor" class="w-full bg-transparent border-none outline-none text-gray-700 font-semibold">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2 px-1">Parol / Kod</label>
+                    <div class="p-4 rounded-2xl shadow-nm-concave flex items-center">
+                        <i class="fa-solid fa-lock text-gray-400 mr-3"></i>
+                        <input type="password" id="password-input" placeholder="••••••••" class="w-full bg-transparent border-none outline-none text-gray-700 font-semibold">
+                    </div>
+                </div>
+                <div id="auth-error" class="text-red-500 text-xs font-bold text-center hidden"></div>
+                
+                <button id="login-btn" class="w-full py-4 mt-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-indigo-800 text-white font-black tracking-wide shadow-md hover:from-indigo-700 hover:to-indigo-900 transition transform active:scale-95">
+                    KIRISH <i class="fa-solid fa-right-to-bracket ml-2"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. ASOSIY DASTUR INTERFEYSI (KIRGANDAN SO'NG OCHILADI) -->
+    <div id="main-app" class="max-w-7xl mx-auto hidden">
+        <!-- Yuqori panel (Header) -->
+        <header class="p-5 rounded-3xl shadow-nm-flat premium-blur border border-white/50 flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-lg font-black shadow shadow-indigo-400">P</div>
+                <div>
+                    <h1 class="text-xl font-black text-indigo-900 leading-tight">pdp.com</h1>
+                    <span id="user-badge" class="inline-block bg-indigo-100 text-indigo-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-md uppercase tracking-wider mt-0.5">-</span>
+                </div>
+            </div>
+            
+            <!-- Dinamik Tab Menyu -->
+            <nav class="flex p-2 rounded-2xl shadow-nm-concave gap-2" id="nav-tabs">
+                <!-- Tab tugmalari JS orqali rollarga qarab chiqariladi -->
+            </nav>
+
+            <button id="logout-btn" class="px-4 py-2 rounded-xl shadow-nm-btn text-red-500 font-bold text-xs hover:shadow-inner active:shadow-nm-btn-active flex items-center gap-2">
+                <i class="fa-solid fa-power-off"></i> Chiqish
+            </button>
+        </header>
+
+        <!-- YUKLANISH INDIKATORI -->
+        <div id="global-loading" class="text-center py-20 hidden">
+            <i class="fa-solid fa-rotate fa-spin text-4xl text-indigo-600 mb-3"></i>
+            <p class="text-gray-500 font-bold">Beketdan ma'lumotlar yuklanmoqda...</p>
+        </div>
+
+        <!-- SAHIFALAR KONTEYNERI -->
+        <div id="page-content" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- CHAT VA JALBA -->
+            <!-- ASOSIY KONTENT HUDUDI (2 ustun) -->
+            <div class="lg:col-span-2 space-y-6" id="primary-view">
+                <!-- Bu yer dinamik ravishda tanlangan tabga qarab o'zgaradi -->
+            </div>
+
+            <!-- CHAT VA YON PANEL (1 ustun) -->
+            <div class="space-y-6" id="secondary-view">
+                <!-- Global Chat -->
+                <div class="p-5 rounded-3xl shadow-nm-flat premium-blur border border-white/60 flex flex-col h-[450px]">
+                    <h3 class="text-base font-black text-gray-800 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-comments text-indigo-500"></i> Maktab Chat paneli
+                    </h3>
+                    <div id="chat-messages" class="flex-1 overflow-y-auto space-y-3 p-3 rounded-2xl shadow-nm-concave bg-transparent mb-3">
+                        <!-- Xabarlar dinamik keladi -->
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="chat-input" placeholder="Xabar yozing..." class="flex-1 p-3 rounded-xl shadow-nm-concave bg-transparent border-none outline-none text-xs font-semibold">
+                        <button id="send-chat-btn" class="w-10 h-10 rounded-xl bg-indigo-600 text-white shadow-nm-btn flex items-center justify-center active:scale-95 transition">
+                            <i class="fa-solid fa-paper-plane text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- BAHOLASH MODALI -->
+    <div id="grade-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-all duration-300">
+        <div class="w-full max-w-sm p-6 m-4 rounded-3xl shadow-2xl bg-[#e0e0e0] border border-white/50 transform scale-95 transition-all duration-300 relative">
+            <h4 class="text-lg font-black text-gray-800 text-center mb-1" id="modal-student-name">Ism</h4>
+            <p class="text-center text-xs text-gray-400 mb-4">O'quvchiga baho qo'yish</p>
+            <div class="grid grid-cols-5 gap-2 mb-4">
+                <button data-g="5" class="grade-set py-3 rounded-xl bg-green-500 text-white font-black text-lg shadow">5</button>
+                <button data-g="4" class="grade-set py-3 rounded-xl bg-blue-500 text-white font-black text-lg shadow">4</button>
+                <button data-g="3" class="grade-set py-3 rounded-xl bg-yellow-500 text-white font-black text-lg shadow">3</button>
+                <button data-g="2" class="grade-set py-3 rounded-xl bg-red-500 text-white font-black text-lg shadow">2</button>
+                <button data-g="1" class="grade-set py-3 rounded-xl bg-gray-700 text-white font-black text-lg shadow">1</button>
+            </div>
+            <button onclick="closeGradeModal()" class="w-full py-2.5 rounded-xl shadow-nm-btn font-bold text-xs text-gray-500">Bekor qilish</button>
+        </div>
+    </div>
+
+    <!-- BEKET (API) BILAN ISHLASH MANTIQLARI -->
+    <script>
+        // --- SOXTA BEKET (MOCK BACKEND DATABASE) ---
+        const MockAPI = {
+            students: [
+                { id: 1, name: "Asilbek Olimov", parentId: 101, attendance: [1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1], grades: [5, 4, 5] },
+                { id: 2, name: "Madina Tursunova", parentId: 102, attendance: [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], grades: [4, 4, 3] },
+                { id: 3, name: "Sardorbek Rahimov", parentId: 103, attendance: [0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1], grades: [3, 5, 4] },
+                { id: 4, name: "Diyora Karimova", parentId: 104, attendance: [1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1], grades: [5, 5, 5] }
+            ],
+            chat: [
+                { sender: "Ustoz Sitora", text: "Assalomu alaykum, darslar boshlandi!", role: "teacher" },
+                { sender: "Direktor Shaxzod", text: "Hamma dars va yo'qlamalarni o'z vaqtida kiritsin.", role: "director" }
+            ],
+            complaints: [
+                { id: 1, from: "Ota-ona (Asilbekniki)", text: "Matematika darsida o'quvchilar shovqin solyapti deb eshitdim.", status: "Yangi" }
+            ],
+            
+            get: function(key) {
+                return new Promise(resolve => {
+                    setTimeout(() => resolve(JSON.parse(localStorage.getItem(`pdp_${key}`)) || this[key]), 400);
+                });
+            },
+            save: function(key, data) {
+                return new Promise(resolve => {
+                    localStorage.setItem(`pdp_${key}`, JSON.stringify(data));
+                    setTimeout(() => resolve({ success: true }), 300);
+                });
+            }
+        };
+
+        // --- GLOBAL HOLAT (STATE) ---
+        let currentUser = null;
+        let activeTab = '';
+        let dbStudents = [];
+        let dbChat = [];
+        let dbComplaints = [];
+        let selectedStudentIdForGrade = null;
+
+        // --- DASTURNI BOSHLASH VA AVTORIZATSIYA ---
+        document.getElementById('login-btn').addEventListener('click', async () => {
+            const login = document.getElementById('login-input').value.trim().toLowerCase();
+            const pass = document.getElementById('password-input').value.trim();
+            const errorDiv = document.getElementById('auth-error');
+
+            errorDiv.classList.add('hidden');
+
+            if (login === 'ustoz' && pass === '12345678') {
+                currentUser = { role: 'teacher', name: 'Ustoz Sitora' };
+            } else if (login === 'oyla' && pass === '87654321') {
+                currentUser = { role: 'parent', name: 'Ota-ona (Madina Tursunovaniki)', studentId: 2 };
+            } else if (login === 'direktor' && pass === '123456789') {
+                currentUser = { role: 'director', name: 'Direktor Shaxzod' };
+            } else {
+                errorDiv.innerText = "Login yoki parol xato!";
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            document.getElementById('user-badge').innerText = currentUser.role;
+            
+            showLoading(true);
+            dbStudents = await MockAPI.get('students');
+            dbChat = await MockAPI.get('chat');
+            dbComplaints = await MockAPI.get('complaints');
+            showLoading(false);
+
+            buildNavigation();
+            initChat();
+            switchTab(activeTab);
+        });
+
+        function showLoading(status) {
+            const loader = document.getElementById('global-loading');
+            const mainGrid = document.getElementById('page-content');
+            if(status) { loader.classList.remove('hidden'); mainGrid.classList.add('hidden'); }
+            else { loader.classList.add('hidden'); mainGrid.classList.remove('hidden'); }
+        }
+
+        // --- NAVIGATSIYA QURISH ---
+        function buildNavigation() {
+            const nav = document.getElementById('nav-tabs');
+            nav.innerHTML = '';
+            
+            let tabs = [];
+            if(currentUser.role === 'teacher') {
+                tabs = [
+                    { id: 'journal', label: 'Jurnal & Yo\'qlama', icon: 'fa-book' },
+                    { id: 'attendance-month', label: '1 Oylik Yo\'qlama', icon: 'fa-calendar-days' }
+                ];
+                activeTab = 'journal';
+            } else if(currentUser.role === 'parent') {
+                tabs = [
+                    { id: 'parent-view', label: 'O\'quvchi Kundaligi', icon: 'fa-id-card' },
+                    { id: 'jalba', label: 'Direktorga Shikoyat', icon: 'fa-triangle-exclamation' }
+                ];
+                activeTab = 'parent-view';
+            } else if(currentUser.role === 'director') {
+                tabs = [
+                    { id: 'director-dashboard', label: 'Maktab Nazorati', icon: 'fa-chart-line' },
+                    { id: 'director-complaints', label: 'Kelgan Shikoyatlar', icon: 'fa-envelope-open-text' }
+                ];
+                activeTab = 'director-dashboard';
+            }
+
+            tabs.forEach(tab => {
+                const btn = document.createElement('button');
+                btn.className = `tab-btn px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2`;
+                btn.id = `btn-${tab.id}`;
+                btn.innerHTML = `<i class="fa-solid ${tab.icon}"></i> <span class="hidden sm:inline">${tab.label}</span>`;
+                btn.onclick = () => switchTab(tab.id);
+                nav.appendChild(btn);
+            });
+        }
+
+        function switchTab(tabId) {
+            activeTab = tabId;
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.className = "tab-btn px-4 py-2 rounded-xl text-xs font-bold transition text-gray-500 hover:text-indigo-600 flex items-center gap-2";
+            });
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            if(activeBtn) activeBtn.className = "tab-btn px-4 py-2 rounded-xl text-xs font-bold transition text-indigo-700 shadow-nm-btn-active bg-gray-200/50 flex items-center gap-2";
+
+            renderMainView();
+        }
+
+        // --- ASOSIY SAHIFALARNI EKRAINGA CHIQARISH ---
+        function renderMainView() {
+            const view = document.getElementById('primary-view');
+            view.innerHTML = '';
+
+            if(activeTab === 'journal') {
+                view.innerHTML = `
+                    <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-black text-gray-800">Sinf Jurnali (Bugun)</h2></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="journal-list"></div>
+                `;
+                const list = document.getElementById('journal-list');
+                dbStudents.forEach(st => {
+                    const lastAttendance = st.attendance[st.attendance.length - 1];
+                    const card = document.createElement('div');
+                    card.className = `p-5 rounded-3xl shadow-nm-flat border border-white/60 bg-[#e0e0e0] flex flex-col justify-between`;
+                    card.innerHTML = `
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl shadow-nm-concave flex items-center justify-center font-bold text-indigo-700">${st.name.charAt(0)}</div>
+                                <div><h4 class="font-bold text-sm text-gray-800 leading-tight">${st.name}</h4><p class="text-[10px] text-gray-400">Baholari: ${st.grades.join(', ') || 'Yo\'q'}</p></div>
+                            </div>
+                            <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white font-black flex items-center justify-center shadow text-xs">${st.grades[st.grades.length-1] || '-'}</div>
+                        </div>
+                        <div class="flex gap-2 pt-3 border-t border-gray-300">
+                            <button onclick="toggleTodayAttendance(${st.id})" class="flex-1 py-2 rounded-xl text-[11px] font-bold shadow-nm-btn active:shadow-nm-btn-active flex items-center justify-center gap-1 ${lastAttendance === 1 ? 'text-green-600' : 'text-red-500 shadow-inner bg-red-50'}">
+                                <i class="fa-solid ${lastAttendance === 1 ? 'fa-circle-check' : 'fa-circle-xmark'}"></i> ${lastAttendance === 1 ? 'Keldi' : 'Kelmadi'}
+                            </button>
+                            <button onclick="openGradeModal(${st.id})" class="flex-1 py-2 rounded-xl text-[11px] text-indigo-600 font-bold shadow-nm-btn active:shadow-nm-btn-active"><i class="fa-solid fa-star"></i> Baholash</button>
+                        </div>
+                    `;
+                    list.appendChild(card);
+                });
+            }
+
+            else if(activeTab === 'attendance-month') {
+                view.innerHTML = `
+                    <h2 class="text-xl font-black text-gray-800 mb-2">1 Oylik Yo'qlama Kalendari</h2>
+                    <p class="text-xs text-gray-500 mb-4">Beketdan kelgan kunlik ma'lumotlar. O'zgartirish uchun katak ustiga bosing (Keldi / Kelmadi).</p>
+                    <div class="space-y-6" id="calendar-list"></div>
+                `;
+                const cList = document.getElementById('calendar-list');
+                dbStudents.forEach(st => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = `p-4 rounded-3xl shadow-nm-flat border border-white/60 bg-[#e0e0e0]`;
+                    wrapper.innerHTML = `
+                        <h4 class="font-bold text-xs text-indigo-900 mb-3"><i class="fa-solid fa-user-graduate mr-1"></i> ${st.name}</h4>
+                        <div class="grid grid-cols-6 sm:grid-cols-10 gap-1.5" id="grid-st-${st.id}"></div>
+                    `;
+                    cList.appendChild(wrapper);
+
+                    const grid = document.getElementById(`grid-st-${st.id}`);
+                    st.attendance.forEach((att, dayIndex) => {
+                        const cell = document.createElement('button');
+                        cell.className = `h-8 text-[10px] font-black rounded-lg transition active:scale-95 ${att === 1 ? 'bg-green-500 text-white shadow shadow-green-300' : 'bg-red-500 text-white shadow shadow-red-300'}`;
+                        cell.innerText = dayIndex + 1;
+                        cell.title = `Kun: ${dayIndex + 1} -> ${att === 1 ? 'Keldi' : 'Kelmadi'}`;
+                        cell.onclick = () => toggleMonthAttendance(st.id, dayIndex);
+                        grid.appendChild(cell);
+                    });
+                });
+            }
+
+            else if(activeTab === 'parent-view') {
+                const myChild = dbStudents.find(s => s.id === currentUser.studentId);
+                view.innerHTML = `
+                    <h2 class="text-xl font-black text-gray-800 mb-4">Farzandingiz Kundaligi</h2>
+                    <div class="p-5 rounded-3xl shadow-nm-flat border border-white/60 bg-[#e0e0e0] mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <h3 class="text-lg font-black text-indigo-950">${myChild.name}</h3>
+                            <p class="text-xs text-gray-400 mt-1">Sinf: 11-A | Ota-ona kabineti</p>
+                        </div>
+                        <div class="px-4 py-2 rounded-xl shadow-nm-concave text-center">
+                            <span class="text-[10px] text-gray-400 block font-bold">Choraklik Bahosi</span>
+                            <span class="text-xl font-black text-indigo-600">4.7</span>
+                        </div>
+                    </div>
+                    <h3 class="text-sm font-bold text-gray-700 mb-3"><i class="fa-solid fa-star text-yellow-500"></i> Oxirgi olingan baholar (Beketdan)</h3>
+                    <div class="flex gap-3 mb-6">
+                        ${myChild.grades.map(g => `<div class="w-12 h-12 rounded-2xl shadow-nm-flat bg-white border border-indigo-100 font-black text-lg text-indigo-800 flex items-center justify-center transform hover:scale-110 transition">${g}</div>`).join('')}
+                    </div>
+                    <h3 class="text-sm font-bold text-gray-700 mb-3"><i class="fa-solid fa-calendar-check text-green-500"></i> Farzandingizning 1 oylik davomati</h3>
+                    <div class="grid grid-cols-6 sm:grid-cols-10 gap-1.5 p-4 rounded-2xl shadow-nm-concave">
+                        ${myChild.attendance.map((att, idx) => `<div class="h-8 rounded-lg flex items-center justify-center text-[10px] font-black text-white ${att === 1 ? 'bg-green-500' : 'bg-red-500'}">${idx+1}</div>`).join('')}
+                    </div>
+                `;
+            }
+
+            else if(activeTab === 'jalba') {
+                view.innerHTML = `
+                    <h2 class="text-xl font-black text-gray-800 mb-2">Direktorga To'g'ridan-to'g'ri Shikoyat Yo'llash</h2>
+                    <p class="text-xs text-gray-500 mb-4">Ushbu yozgan shikoyatingiz maxfiy tarzda faqat maktab direktorining sahifasiga boradi.</p>
+                    <div class="p-6 rounded-3xl shadow-nm-flat border border-white/60 bg-[#e0e0e0] space-y-4">
+                        <textarea id="complaint-text" rows="4" placeholder="Shikoyat yoki taklifingizni batafsil yozing..." class="w-full p-4 rounded-2xl shadow-nm-concave bg-transparent border-none outline-none text-xs font-semibold text-gray-700 placeholder-gray-400"></textarea>
+                        <button onclick="sendComplaint()" class="w-full py-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white font-bold text-xs shadow-md tracking-wider flex items-center justify-center gap-2 active:scale-95 transition">
+                            <i class="fa-solid fa-paper-plane"></i> DIREKTORGA YUBORISH
+                        </button>
+                    </div>
+                `;
+            }
+
+            else if(activeTab === 'director-dashboard') {
+                let totalGradesCount = 0;
+                dbStudents.forEach(s => totalGradesCount += s.grades.length);
+
+                view.innerHTML = `
+                    <h2 class="text-xl font-black text-gray-800 mb-4">Maktab Nazorati (Direktor Paneli)</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                        <div class="p-4 rounded-2xl shadow-nm-flat bg-[#e0e0e0] border border-white/60 text-center">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase">O'quvchilar</span>
+                            <h3 class="text-2xl font-black text-indigo-900 mt-1">${dbStudents.length} ta</h3>
+                        </div>
+                        <div class="p-4 rounded-2xl shadow-nm-flat bg-[#e0e0e0] border border-white/60 text-center">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase">Qo'yilgan Baholar</span>
+                            <h3 class="text-2xl font-black text-green-600 mt-1">${totalGradesCount} ta</h3>
+                        </div>
+                        <div class="p-4 rounded-2xl shadow-nm-flat bg-[#e0e0e0] border border-white/60 text-center">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase">Shikoyatlar</span>
+                            <h3 class="text-2xl font-black text-red-500 mt-1">${dbComplaints.length} ta</h3>
+                        </div>
+                    </div>
+                    <div class="p-5 rounded-3xl shadow-nm-flat border border-white/60 bg-[#e0e0e0]">
+                        <h3 class="text-sm font-bold text-gray-800 mb-3">Tizimdagi O'quvchilar monitoringi</h3>
+                        <div class="space-y-3">
+                            ${dbStudents.map(s => `
+                                <div class="flex justify-between items-center p-3 rounded-xl shadow-nm-concave">
+                                    <span class="text-xs font-bold text-gray-700">${s.name}</span>
+                                    <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-bold">Jami baholari: ${s.grades.length} ta</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            else if(activeTab === 'director-complaints') {
+                view.innerHTML = `
+                    <h2 class="text-xl font-black text-gray-800 mb-2">Ota-onalar tomonidan yuborilgan shikoyatlar</h2>
+                    <p class="text-xs text-gray-500 mb-4">Ushbu shikoyatlar faqat sizga (Direktorga) keladi.</p>
+                    <div class="space-y-4" id="complaints-container"></div>
+                `;
+                const compBox = document.getElementById('complaints-container');
+                if(dbComplaints.length === 0) {
+                    compBox.innerHTML = `<p class="text-xs text-gray-400 font-bold text-center py-6">Hozircha shikoyatlar yo'q.</p>`;
+                    return;
+                }
+                dbComplaints.forEach(c => {
+                    const div = document.createElement('div');
+                    div.className = `p-4 rounded-2xl shadow-nm-flat border border-l-4 border-l-red-500 border-white/60 bg-[#e0e0e0]`;
+                    div.innerHTML = `
+                        <div class="flex justify-between text-[11px] font-bold text-gray-400 mb-2">
+                            <span><i class="fa-solid fa-user-shield"></i> ${c.from}</span>
+                            <span class="text-red-500 bg-red-50 px-2 py-0.5 rounded">${c.status}</span>
+                        </div>
+                        <p class="text-xs font-semibold text-gray-700 leading-relaxed">${c.text}</p>
+                    `;
+                    compBox.appendChild(div);
+                });
+            }
+        }
+
+        // --- INTERAKTIV FUNKSIYALAR ---
+        async function toggleTodayAttendance(studentId) {
+            dbStudents = dbStudents.map(s => {
+                if(s.id === studentId) {
+                    let att = [...s.attendance];
+                    att[att.length - 1] = att[att.length - 1] === 1 ? 0 : 1;
+                    return { ...s, attendance: att };
+                }
+                return s;
+            });
+            await MockAPI.save('students', dbStudents);
+            renderMainView();
+        }
+
+        async function toggleMonthAttendance(studentId, dayIndex) {
+            dbStudents = dbStudents.map(s => {
+                if(s.id === studentId) {
+                    let att = [...s.attendance];
+                    att[dayIndex] = att[dayIndex] === 1 ? 0 : 1;
+                    return { ...s, attendance: att };
+                }
+                return s;
+            });
+            await MockAPI.save('students', dbStudents);
+            renderMainView();
+        }
+
+        function openGradeModal(studentId) {
+            selectedStudentIdForGrade = studentId;
+            const student = dbStudents.find(s => s.id === studentId);
+            document.getElementById('modal-student-name').innerText = student.name;
+            const modal = document.getElementById('grade-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('div').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeGradeModal() {
+            const modal = document.getElementById('grade-modal');
+            modal.classList.add('opacity-0');
+            modal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        document.querySelectorAll('.grade-set').forEach(btn => {
+            btn.onclick = async (e) => {
+                const grade = parseInt(e.target.getAttribute('data-g'));
+                dbStudents = dbStudents.map(s => {
+                    if(s.id === selectedStudentIdForGrade) {
+                        return { ...s, grades: [...s.grades, grade] };
+                    }
+                    return s;
+                });
+                await MockAPI.save('students', dbStudents);
+                closeGradeModal();
+                renderMainView();
+            }
+        });
+
+        async function sendComplaint() {
+            const text = document.getElementById('complaint-text').value.trim();
+            if(!text) return alert("Shikoyat matnini kiriting!");
+
+            const newComplaint = {
+                id: dbComplaints.length + 1,
+                from: currentUser.name,
+                text: text,
+                status: "Yangi"
+            };
+
+            dbComplaints.push(newComplaint);
+            await MockAPI.save('complaints', dbComplaints);
+            
+            alert("Shikoyat to'g'ridan-to'g'ri direktorga muvaffaqiyatli yuborildi!");
+            document.getElementById('complaint-text').value = '';
+        }
+
+        // --- GLOBAL CHAT PANELI MANTIQLARI ---
+        function initChat() {
+            const container = document.getElementById('chat-messages');
+            container.innerHTML = '';
+            
+            dbChat.forEach(msg => {
+                const div = document.createElement('div');
+                const isMe = msg.sender === currentUser.name;
+                
+                div.className = `p-3 rounded-2xl text-xs max-w-[85%] shadow-nm-flat ${isMe ? 'bg-indigo-600 text-white self-end ml-auto' : 'bg-white text-gray-700 self-start mr-auto'}`;
+                div.innerHTML = `
+                    <div class="font-black text-[10px] ${isMe ? 'text-indigo-200' : 'text-indigo-600'} mb-1">${msg.sender}</div>
+                    <div>${msg.text}</div>
+                `;
+                container.appendChild(div);
+            });
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Xabar yuborish hodisasi
+        document.getElementById('send-chat-btn').addEventListener('click', async () => {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if(!text) return;
+
+            const newMsg = {
+                sender: currentUser.name,
+                text: text,
+                role: currentUser.role
+            };
+
+            dbChat.push(newMsg);
+            await MockAPI.save('chat', dbChat);
+            input.value = '';
+            initChat();
+        });
+
+        // Enter bosilganda ham xabar yuborilishi uchun
+        document.getElementById('chat-input').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') {
+                document.getElementById('send-chat-btn').click();
+            }
+        });
+
+        // Chiqish (Logout) hodisasi
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            currentUser = null;
+            activeTab = '';
+            document.getElementById('login-input').value = '';
+            document.getElementById('password-input').value = '';
+            document.getElementById('main-app').classList.add('hidden');
+            document.getElementById('auth-screen').classList.remove('hidden');
+        });
+    </script>
+</body>
+</html>
